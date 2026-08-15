@@ -16,6 +16,11 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/prasannaba/llmterm"
+Repository = "https://github.com/prasannaba/llmterm"
+Issues = "https://github.com/prasannaba/llmterm/issues"
+
 [project.scripts]
 llmterm = "llmterm.main:main"
 
