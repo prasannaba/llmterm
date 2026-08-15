@@ -120,8 +120,8 @@ wheels = [
 ]
 
 [[package]]
-name = "llmterm"
-version = "0.1.0"
+name = "llmterm-prasannaba"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "openai" },

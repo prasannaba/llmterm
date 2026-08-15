@@ -6,14 +6,14 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-import asyncio
 import argparse
+import asyncio
 
 from openai import APIConnectionError, APIStatusError
 from openai.types.chat import ChatCompletionMessageParam
 
-from llmterm.endpoint import LLMEndpoint
 from llmterm import __version__
+from llmterm.endpoint import LLMEndpoint
 from llmterm.utils import (
     DEFAULT_SYSTEM_PROMPT,
     clean_response,
@@ -95,7 +95,6 @@ async def run_conversation(endpoint: LLMEndpoint) -> None:
 
         messages.append({"role": "user", "content": user_prompt})
 
-        stream = None
         try:
             stream = await endpoint.chat(
                 model=endpoint.model,
@@ -103,16 +102,21 @@ async def run_conversation(endpoint: LLMEndpoint) -> None:
                 stream=True,
             )
 
-            full_content = ""
-            print("Assistant: ", end="", flush=True)
+            # AsyncStream owns an underlying HTTP response stream.  Let its
+            # context manager close that response exactly once.  Calling
+            # close() after async-for has exhausted it can race with
+            # httpcore's async-generator finalizer during interpreter exit.
+            async with stream:
+                full_content = ""
+                print("Assistant: ", end="", flush=True)
 
-            async for chunk in stream:
-                if not chunk.choices:
-                    continue
-                content = chunk.choices[0].delta.content
-                if content is not None:
-                    print(content, end="", flush=True)
-                    full_content += content
+                async for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    content = chunk.choices[0].delta.content
+                    if content is not None:
+                        print(content, end="", flush=True)
+                        full_content += content
 
             print()
             messages.append({"role": "assistant", "content": full_content})
@@ -130,9 +134,6 @@ async def run_conversation(endpoint: LLMEndpoint) -> None:
             print(f"\n[Error] API returned status {exc.status_code}: {exc.message}")
         except Exception as exc:
             print(f"\n[Error] Streaming failed: {exc}")
-        finally:
-            if stream is not None:
-                await stream.close()
 
 
 async def async_main() -> None:
