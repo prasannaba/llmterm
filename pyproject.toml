@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "llmterm"
+name = "llmterm-prasannaba"
 version = "0.1.0"
 description = "A minimal terminal client for OpenAI-compatible LLM servers."
 authors = [{ name = "Prasanna Badami" }]
