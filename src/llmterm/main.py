@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from typing import Any
 
 from openai import APIConnectionError, APIStatusError
 from openai.types.chat import ChatCompletionMessageParam
@@ -102,10 +103,8 @@ async def run_conversation(endpoint: LLMEndpoint) -> None:
                 stream=True,
             )
 
-            # AsyncStream owns an underlying HTTP response stream.  Let its
-            # context manager close that response exactly once.  Calling
-            # close() after async-for has exhausted it can race with
-            # httpcore's async-generator finalizer during interpreter exit.
+            # Drain leftover HTTP body bytes (see attach_stream_body_drain)
+            # and let AsyncStream close the response exactly once.
             async with stream:
                 full_content = ""
                 print("Assistant: ", end="", flush=True)
@@ -136,9 +135,44 @@ async def run_conversation(endpoint: LLMEndpoint) -> None:
             print(f"\n[Error] Streaming failed: {exc}")
 
 
+def _suppress_httpcore_asyncgen_close_errors(
+    loop: asyncio.AbstractEventLoop,
+) -> None:
+    """Hide a known Python 3.13 + httpcore2 cleanup error.
+
+    When a streaming response is closed while PoolByteStream.__aiter__ is
+    still suspended, httpcore2's safe_async_iterate() raises
+    RuntimeError: generator didn't stop after athrow().  asyncio then
+    reports that from shutdown_asyncgens().  The stream drain in
+    endpoint.py avoids this in the common case; this handler is the
+    fallback for servers that never finish the HTTP body.
+    """
+    previous = loop.get_exception_handler()
+
+    def handler(event_loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
+        message = str(context.get("message", ""))
+        exc = context.get("exception")
+        if (
+            isinstance(exc, RuntimeError)
+            and "generator didn't stop after athrow" in str(exc)
+            and (
+                "asynchronous generator" in message
+                or context.get("asyncgen") is not None
+            )
+        ):
+            return
+        if previous is not None:
+            previous(event_loop, context)
+        else:
+            event_loop.default_exception_handler(context)
+
+    loop.set_exception_handler(handler)
+
+
 async def async_main() -> None:
     """Application entry point."""
     load_configuration()
+    _suppress_httpcore_asyncgen_close_errors(asyncio.get_running_loop())
     endpoint = choose_endpoint(create_endpoints())
 
     if endpoint is None:
