@@ -150,6 +150,10 @@ async def async_main() -> None:
         if await choose_model(endpoint):
             await run_conversation(endpoint)
     finally:
+        # asyncio.run() normally shuts down async generators only after this
+        # coroutine returns.  Drain them first so httpcore2 finishes response
+        # cleanup while its client/connection pool is still available.
+        await asyncio.get_running_loop().shutdown_asyncgens()
         await endpoint.close()
 
 
