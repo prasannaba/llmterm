@@ -16,3 +16,5 @@ htmlcov/
 .env
 .DS_Store
 Thumbs.db
+# Local-only technical docs (not part of the package, never committed).
+docs/
