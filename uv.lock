@@ -129,7 +129,7 @@ wheels = [
 ]
 
 [[package]]
-name = "llmterm"
+name = "llmterm-prasannaba"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
