@@ -58,10 +58,10 @@ to be writable.
 
 ### Using uv
 
-Install `llmterm-prasannaba` as a standalone CLI tool:
+Install `llmterm` as a standalone CLI tool:
 
 ```bash
-uv tool install llmterm-prasannaba
+uv tool install llmterm
 ```
 
 Run:
@@ -72,10 +72,10 @@ llmterm
 
 ### Using pip
 
-You can also install `llmterm-prasannaba` using pip:
+You can also install `llmterm` using pip:
 
 ```bash
-python -m pip install llmterm-prasannaba
+python -m pip install llmterm
 ```
 
 Run:
